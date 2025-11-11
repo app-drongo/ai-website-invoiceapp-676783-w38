@@ -1,5 +1,4 @@
-// hooks/useFormSubmit.ts - SIMPLIFIED VERSION
-// Only needs formId - backend gets projectId from form document
+// hooks/useFormSubmit.ts - NO 'any' types for strict ESLint
 
 import { useState } from 'react';
 
@@ -9,6 +8,13 @@ interface UseFormSubmitResult {
   isSuccess: boolean;
   message: string | null;
   reset: () => void;
+}
+
+interface SubmitResponse {
+  success: boolean;
+  message?: string;
+  redirect?: string;
+  submissionId?: string;
 }
 
 /**
@@ -28,20 +34,20 @@ export function useFormSubmit(): UseFormSubmitResult {
     try {
       const formElement = e.currentTarget;
       
-      // ✅ Get formId from form element
+      // Get formId from form element
       const formId = formElement.getAttribute('data-form-id');
       if (!formId) {
         throw new Error('Form ID not found. Make sure form has data-form-id attribute.');
       }
 
-      // ✅ Extract form data
+      // Extract form data
       const formData = new FormData(formElement);
       const data: Record<string, string> = {};
       formData.forEach((value, key) => {
         data[key] = value.toString();
       });
 
-      // ✅ Get API URL
+      // Get API URL
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
       console.log('📤 Submitting form:', {
@@ -50,17 +56,17 @@ export function useFormSubmit(): UseFormSubmitResult {
         apiUrl
       });
 
-      // ✅ Submit to backend (only send formId, backend gets projectId)
+      // Submit to backend
       const response = await fetch(`${apiUrl}/api/forms/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          formId,        // ✅ Only formId needed!
+          formId,
           formData: data
         })
       });
 
-      const result = await response.json();
+      const result: SubmitResponse = await response.json();
 
       if (!response.ok) {
         throw new Error(result.message || 'Submission failed');
@@ -68,17 +74,17 @@ export function useFormSubmit(): UseFormSubmitResult {
 
       console.log('✅ Form submitted successfully:', result);
 
-      // ✅ Backend returned success
+      // Backend returned success
       setIsSuccess(true);
       setMessage(result.message || 'Thank you for your submission!');
       
-      // ✅ Reset form
+      // Reset form
       formElement.reset();
 
-      // ✅ Handle redirect if backend says so
+      // Handle redirect if backend says so
       if (result.redirect) {
         setTimeout(() => {
-          window.location.href = result.redirect;
+          window.location.href = result.redirect as string;
         }, 2000);
       } else {
         // Auto-hide message after 5 seconds
@@ -88,10 +94,11 @@ export function useFormSubmit(): UseFormSubmitResult {
         }, 5000);
       }
 
-    } catch (error: any) {
+    } catch (error) {
       console.error('❌ Form submission error:', error);
       setIsSuccess(false);
-      setMessage(error.message || 'Failed to submit form. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to submit form. Please try again.';
+      setMessage(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
