@@ -2,7 +2,6 @@
 
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Sparkles, Zap, Shield, Globe } from 'lucide-react';
-import { useState } from 'react';
 import { useSmartNavigation } from '@/hooks/useSmartNavigation';
 
 type BackgroundPattern = 'dots' | 'grid' | 'gradient';
